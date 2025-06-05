@@ -1,21 +1,22 @@
-from transformers import BertModel, BertConfig
 import torch.nn as nn
-from torch.nn import MSELoss, CrossEntropyLoss
 import torch.nn.functional as F
+from transformers import BertConfig, BertModel
 
 from ..utils import TARGETS_NUM
 
-class CustomBert(nn.Module):
 
+class CustomBert(nn.Module):
     def __init__(self, config):
         super(CustomBert, self).__init__()
         self.num_labels = TARGETS_NUM
 
-        self.bert = BertModel.from_pretrained('bert-base-uncased')
-        self.bert_config = BertConfig.from_pretrained('bert-base-uncased')
+        self.bert = BertModel.from_pretrained("bert-base-uncased")
+        self.bert_config = BertConfig.from_pretrained("bert-base-uncased")
 
         self.dropout = nn.Dropout(config["model"]["hidden_dropout_prob"])
-        self.linear  = nn.Linear(self.bert_config["hidden_size"], config["model"]["hidden_size"])
+        self.linear = nn.Linear(
+            self.bert_config["hidden_size"], config["model"]["hidden_size"]
+        )
         self.classifier = nn.Linear(config["model"]["hidden_size"], self.num_labels)
 
         nn.init.xavier_uniform_(self.linear.weight)
@@ -30,7 +31,6 @@ class CustomBert(nn.Module):
         head_mask=None,
         inputs_embeds=None,
     ):
-
         outputs = self.bert(
             input_ids,
             attention_mask=attention_mask,

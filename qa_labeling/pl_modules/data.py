@@ -1,17 +1,17 @@
-from typing import Optional
 from pathlib import Path
-import pandas as pd
-import numpy as np
+from typing import Optional
 
+import numpy as np
+import pandas as pd
 import pytorch_lightning as pl
 import torch
 from transformers import BertTokenizer
 
-from qa_labeling.utils import compute_input_arays, compute_output_arrays, TARGETS
+from qa_labeling.utils import TARGETS, compute_input_arays, compute_output_arrays
+
 
 class QuestDataset(torch.utils.data.Dataset):
-    def __init__(self, inputs, lengths, labels = None):
-        
+    def __init__(self, inputs, lengths, labels=None):
         self.inputs = inputs
         if labels is not None:
             self.labels = labels
@@ -20,10 +20,10 @@ class QuestDataset(torch.utils.data.Dataset):
         self.lengths = lengths
 
     def __getitem__(self, idx):
-        input_ids       = self.inputs[0][idx]
-        input_masks     = self.inputs[1][idx]
-        input_segments  = self.inputs[2][idx]
-        lengths         = self.lengths[idx]
+        input_ids = self.inputs[0][idx]
+        input_masks = self.inputs[1][idx]
+        input_segments = self.inputs[2][idx]
+        lengths = self.lengths[idx]
         if self.labels is not None:
             labels = self.labels[idx]
             return input_ids, input_masks, input_segments, labels, lengths
@@ -31,7 +31,7 @@ class QuestDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.inputs[0])
-    
+
 
 class MyDataModule(pl.LightningDataModule):
     def __init__(self, config):
@@ -39,7 +39,9 @@ class MyDataModule(pl.LightningDataModule):
         self.save_hyperparameters()
         self.config = config
 
-        self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
+        self.tokenizer = BertTokenizer.from_pretrained(
+            "bert-base-uncased", do_lower_case=True
+        )
 
     def prepare_data(self):
         pass
@@ -48,30 +50,47 @@ class MyDataModule(pl.LightningDataModule):
     def setup(self, stage: Optional[str] = None):
         data_dir = Path("../../data_raw/")
 
+        train = pd.read_csv(data_dir / "train.csv")
+        val = pd.read_csv(data_dir / "val.csv")
+        test = pd.read_csv(data_dir / "test.csv")
+        input_categories = list(train.columns[[1, 2, 5]])
 
-        train = pd.read_csv(data_dir / 'train.csv')
-        val = pd.read_csv(data_dir / 'val.csv')
-        test = pd.read_csv(data_dir / 'test.csv')
-        input_categories = list(train.columns[[1,2,5]])
-
-        inputs_train = compute_input_arays(train, input_categories, self.tokenizer, max_sequence_length=290)
-        outputs_train = compute_output_arrays(train, columns = TARGETS)
+        inputs_train = compute_input_arays(
+            train, input_categories, self.tokenizer, max_sequence_length=290
+        )
+        outputs_train = compute_output_arrays(train, columns=TARGETS)
         outputs_train = torch.tensor(outputs_train, dtype=torch.float32)
         lengths_train = np.argmax(inputs_train[0] == 0, axis=1)
         lengths_train[lengths_train == 0] = inputs_train[0].shape[1]
-        self.train_dataset = QuestDataset(inputs=inputs_train, lengths=lengths_train, labels=outputs_train)
+        self.train_dataset = QuestDataset(
+            inputs=inputs_train, lengths=lengths_train, labels=outputs_train
+        )
 
-        inputs_valid = compute_input_arays(val, input_categories, self.tokenizer, max_sequence_length=290)
-        outputs_valid = compute_output_arrays(val, columns = TARGETS)
+        inputs_valid = compute_input_arays(
+            val, input_categories, self.tokenizer, max_sequence_length=290
+        )
+        outputs_valid = compute_output_arrays(val, columns=TARGETS)
         outputs_valid = torch.tensor(outputs_valid, dtype=torch.float32)
         lengths_valid = np.argmax(inputs_valid[0] == 0, axis=1)
         lengths_valid[lengths_valid == 0] = inputs_valid[0].shape[1]
-        self.val_dataset    = QuestDataset(inputs=inputs_valid, lengths=lengths_valid, labels=outputs_valid)
+        self.val_dataset = QuestDataset(
+            inputs=inputs_valid, lengths=lengths_valid, labels=outputs_valid
+        )
 
-        test_inputs = compute_input_arays(test, input_categories, self.tokenizer, max_sequence_length=512, t_max_len=30, q_max_len=239, a_max_len=239)
+        test_inputs = compute_input_arays(
+            test,
+            input_categories,
+            self.tokenizer,
+            max_sequence_length=512,
+            t_max_len=30,
+            q_max_len=239,
+            a_max_len=239,
+        )
         lengths_test = np.argmax(test_inputs[0] == 0, axis=1)
         lengths_test[lengths_test == 0] = test_inputs[0].shape[1]
-        self.test_dataset = QuestDataset(inputs=test_inputs, lengths=lengths_test, labels=None)
+        self.test_dataset = QuestDataset(
+            inputs=test_inputs, lengths=lengths_test, labels=None
+        )
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
         train_sampler = torch.utils.data.RandomSampler(self.train_dataset)
@@ -82,7 +101,7 @@ class MyDataModule(pl.LightningDataModule):
             shuffle=True,
             num_workers=self.config["training"]["num_workers"],
         )
-    
+
     def val_dataloader(self) -> torch.utils.data.DataLoader:
         return torch.utils.data.DataLoader(
             self.val_dataset,
@@ -90,7 +109,7 @@ class MyDataModule(pl.LightningDataModule):
             shuffle=False,
             num_workers=self.config["training"]["num_workers"],
         )
-    
+
     def test_dataloader(self) -> torch.utils.data.DataLoader:
         return torch.utils.data.DataLoader(
             self.test_dataset,
@@ -106,6 +125,6 @@ class MyDataModule(pl.LightningDataModule):
             shuffle=False,
             num_workers=self.config["training"]["num_workers"],
         )
-    
+
     def teardown(self, stage: str) -> None:
         pass

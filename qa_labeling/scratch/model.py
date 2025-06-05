@@ -1,20 +1,19 @@
-from transformers import BertModel
 import torch.nn as nn
-from torch.nn import MSELoss, CrossEntropyLoss
 import torch.nn.functional as F
+from torch.nn import CrossEntropyLoss, MSELoss
+from transformers import BertModel
 
 
-## Stolen from transformer code base without any noble intention.
+# Stolen from transformer code base without any noble intention.
 class CustomBert(nn.Module):
-
     def __init__(self, config):
         super(CustomBert, self).__init__()
         self.num_labels = config.num_labels
 
-        self.bert = BertModel.from_pretrained('bert-base-uncased')
+        self.bert = BertModel.from_pretrained("bert-base-uncased")
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.bn = nn.BatchNorm1d(1024)
-        self.linear  = nn.Linear(config.hidden_size,1024)
+        self.linear = nn.Linear(config.hidden_size, 1024)
         self.classifier = nn.Linear(1024, config.num_labels)
 
         # self.init_weights() - adding is needed
@@ -29,7 +28,6 @@ class CustomBert(nn.Module):
         inputs_embeds=None,
         labels=None,
     ):
-
         outputs = self.bert(
             input_ids,
             attention_mask=attention_mask,
@@ -42,11 +40,15 @@ class CustomBert(nn.Module):
         pooled_output = outputs[1]
 
         pooled_output = self.dropout(pooled_output)
-        lin_output = F.relu(self.bn(self.linear(pooled_output))) ## Note : This Linear layer is added without expert supervision . This will worsen the results . 
-                                               ## But you are smarter than me , so you will figure out,how to customize better.
-        lin_output = self.dropout(lin_output)    
+        lin_output = F.relu(
+            self.bn(self.linear(pooled_output))
+        )  # Note : This Linear layer is added without expert supervision . This will worsen the results .
+        # But you are smarter than me , so you will figure out,how to customize better.
+        lin_output = self.dropout(lin_output)
         logits = self.classifier(lin_output)
-        outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
+        outputs = (logits,) + outputs[
+            2:
+        ]  # add hidden states and attention if they are here
 
         if labels is not None:
             if self.num_labels == 1:
