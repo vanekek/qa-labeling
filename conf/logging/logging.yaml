@@ -1,0 +1,5 @@
+# mlflow logging
+experiment_name: qa_labeling
+run_name: first_exp
+mlflow_save_dir: "."
+tracking_uri: http://127.0.0.1:8080

@@ -1,7 +1,7 @@
 import hydra
 import numpy as np
 import pytorch_lightning as pl
-from model import ImageClassifier
+from model import QALabler
 from omegaconf import DictConfig
 
 from data import MyDataModule
@@ -11,11 +11,11 @@ from data import MyDataModule
 def main(config: DictConfig):
     dm = MyDataModule(config)
 
-    model = ImageClassifier.load_from_checkpoint(config["inference"]["ckpt_path"])
-    trainer = pl.Trainer(accelerator="gpu", devices="auto")
+    model = QALabler.load_from_checkpoint(config["inference"]["ckpt_path"])
+    trainer = pl.Trainer(accelerator="cpu", devices="auto")
 
-    accs = trainer.predict(model, datamodule=dm)
-    print(f"Test accuracy: {np.mean(accs):.2f}")
+    rhos = trainer.predict(model, datamodule=dm)
+    print(f"Test rho: {np.mean(rhos):.2f}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,11 @@
+hidden_dropout_prob: 0.2
+hidden_size: 200
+
+freeze: freeze
+question_weight: question_weight
+answer_weight: answer_weight
+
+# for saving models
+model_local_path: ../models
+save_top_k: 5
+every_n_epochs: 1
