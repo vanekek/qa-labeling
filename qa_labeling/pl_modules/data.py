@@ -48,7 +48,8 @@ class MyDataModule(pl.LightningDataModule):
         # поменять на пути
 
     def setup(self, stage: Optional[str] = None):
-        data_dir = Path("../../data_raw/")
+        current_file = Path(__file__).resolve()
+        data_dir = current_file.parent.parent.parent / "data_raw"
 
         train = pd.read_csv(data_dir / "train.csv")
         val = pd.read_csv(data_dir / "val.csv")
@@ -93,11 +94,11 @@ class MyDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
-        train_sampler = torch.utils.data.RandomSampler(self.train_dataset)
+        # train_sampler = torch.utils.data.RandomSampler(self.train_dataset)
         return torch.utils.data.DataLoader(
             self.train_dataset,
             batch_size=self.config["training"]["batch_size"],
-            sampler=train_sampler,
+            # sampler=train_sampler,
             shuffle=True,
             num_workers=self.config["training"]["num_workers"],
         )

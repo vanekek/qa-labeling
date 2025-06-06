@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import BertConfig, BertModel
 
-from ..utils import TARGETS_NUM
+from qa_labeling.utils import TARGETS_NUM
 
 
 class CustomBert(nn.Module):
@@ -15,7 +15,7 @@ class CustomBert(nn.Module):
 
         self.dropout = nn.Dropout(config["model"]["hidden_dropout_prob"])
         self.linear = nn.Linear(
-            self.bert_config["hidden_size"], config["model"]["hidden_size"]
+            self.bert_config.hidden_size, config["model"]["hidden_size"]
         )
         self.classifier = nn.Linear(config["model"]["hidden_size"], self.num_labels)
 

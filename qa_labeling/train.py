@@ -15,16 +15,18 @@ def main(config: DictConfig):
     pl.seed_everything(42)
     dm = MyDataModule(config)
     model = QALabler(
-        CustomBert(num_classes=config["model"]["num_classes"]),
+        CustomBert(config=config),
         lr=config["training"]["lr"],
+        loss_weights=config["training"]["loss_weights"],
+        freeze=config["model"]["freeze"],
     )
 
     loggers = [
         pl.loggers.MLFlowLogger(
-            experiment_name="cats-and-dogs",
-            run_name="conv-classifier",
+            experiment_name="qa_labeling",
+            run_name="simple_bert",
             save_dir=".",
-            tracking_uri="http://127.0.0.1:8080",
+            tracking_uri=config["logging"]["tracking_uri"],
         ),
     ]
 
@@ -46,20 +48,12 @@ def main(config: DictConfig):
 
     trainer = pl.Trainer(
         max_epochs=config["training"]["num_epochs"],
-        log_every_n_steps=1,  # to resolve warnings
-        accelerator="cuda",
-        devices=2,
-        # strategy=DDPStrategy(
-        #     ddp_comm_state=powerSGD.PowerSGDState(
-        #         process_group=None,
-        #         matrix_approximation_rank=1,
-        #         start_powerSGD_iter=5000,
-        #         use_error_feedback=True
-        #     ),
-        #     ddp_comm_hook=powerSGD.powerSGD_hook,
-        # ),
+        log_every_n_steps=5,  # to resolve warnings
+        accelerator="auto",
+        # devices=1,
         logger=loggers,
         callbacks=callbacks,
+        limit_train_batches=0.05,
     )
 
     trainer.fit(model, datamodule=dm)

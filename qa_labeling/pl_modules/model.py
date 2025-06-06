@@ -11,20 +11,28 @@ class QALabler(pl.LightningModule):
     for the classification task
     """
 
-    def __init__(self, model, lr, loss_weights):
+    def __init__(self, model, lr, loss_weights, freeze):
         super().__init__()
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore=["model"])
         self.model = model
         self.lr = lr
         self.loss_weights = loss_weights
+        self.freeze = freeze
         self.criterion = torch.nn.BCEWithLogitsLoss()
 
-    def forward(self, x):
-        return self.model(x)
+    def forward(
+        self,
+        input_ids,
+        attention_mask,
+        token_type_ids,
+    ):
+        return self.model(input_ids, attention_mask, token_type_ids)
 
     def training_step(self, batch: Any, batch_idx: int, dataloader_idx=0):
         input_ids, input_masks, input_segments, labels, _ = batch
 
+        if self.freeze is True:
+            self.model.eval()
         logits = self(
             input_ids=input_ids,
             attention_mask=input_masks,
@@ -54,13 +62,15 @@ class QALabler(pl.LightningModule):
 
         val_loss = self.criterion(logits, labels).item()
 
-        valid_preds = logits.squeeze().numpy()
         original = labels.squeeze().numpy()
-        preds = torch.sigmoid(torch.tensor(valid_preds)).numpy()
+        preds = torch.sigmoid(torch.tensor(logits.squeeze())).numpy()
+
+        print(original.shape)
+        print(preds.shape)
 
         rho_val = np.mean(
             [
-                spearmanr(original[:, i], preds[:, i]).correlation
+                np.nan_to_num(spearmanr(original[:, i], preds[:, i]).statistic)
                 for i in range(preds.shape[1])
             ]
         )

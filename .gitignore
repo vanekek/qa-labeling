@@ -175,3 +175,5 @@ cython_debug/
 
 data_raw
 models
+mlruns
+outputs
