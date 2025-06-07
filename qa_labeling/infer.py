@@ -1,9 +1,10 @@
 import hydra
 import numpy as np
 import pytorch_lightning as pl
-from data import MyDataModule
-from model import QALabler
 from omegaconf import DictConfig
+
+from qa_labeling.pl_modules.data import MyDataModule
+from qa_labeling.pl_modules.model import QALabler
 
 
 @hydra.main(version_base=None, config_path="../../conf", config_name="config")
