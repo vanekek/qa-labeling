@@ -177,3 +177,5 @@ data_raw
 models
 mlruns
 outputs
+!data_raw/*.dvc
+tmp
