@@ -45,7 +45,6 @@ class MyDataModule(pl.LightningDataModule):
 
     def prepare_data(self):
         pass
-        # поменять на пути
 
     def setup(self, stage: Optional[str] = None):
         # Old setupping
@@ -105,11 +104,9 @@ class MyDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
-        # train_sampler = torch.utils.data.RandomSampler(self.train_dataset)
         return torch.utils.data.DataLoader(
             self.train_dataset,
             batch_size=self.config["training"]["batch_size"],
-            # sampler=train_sampler,
             shuffle=True,
             num_workers=self.config["training"]["num_workers"],
         )

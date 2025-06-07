@@ -1,2 +1,4 @@
 ckpt_path: models/epoch=02-val_loss=0.4259-v2.ckpt
 save_path: preds/preds.csv
+
+onnx_path: "./models/epoch=02-val_loss=0.4259-v2.ckpt"

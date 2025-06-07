@@ -6,9 +6,6 @@ from qa_labeling.pl_modules.classifiers import CustomBert
 from qa_labeling.pl_modules.data import MyDataModule
 from qa_labeling.pl_modules.model import QALabler
 
-# from pytorch_lightning.strategies import DDPStrategy
-# from torch.distributed.algorithms.ddp_comm_hooks import powerSGD_hook as powerSGD
-
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(config: DictConfig):
@@ -23,8 +20,8 @@ def main(config: DictConfig):
 
     loggers = [
         pl.loggers.MLFlowLogger(
-            experiment_name="qa_labeling",
-            run_name="simple_bert",
+            experiment_name=config["logging"]["experiment_name"],
+            run_name=config["logging"]["run_name"],
             save_dir=".",
             tracking_uri=config["logging"]["tracking_uri"],
         ),
@@ -48,12 +45,11 @@ def main(config: DictConfig):
 
     trainer = pl.Trainer(
         max_epochs=config["training"]["num_epochs"],
-        log_every_n_steps=5,  # to resolve warnings
+        log_every_n_steps=5,
         accelerator="auto",
-        # devices=1,
         logger=loggers,
         callbacks=callbacks,
-        limit_train_batches=0.05,
+        limit_train_batches=config["training"]["limit_train_batches"],
     )
 
     trainer.fit(model, datamodule=dm)

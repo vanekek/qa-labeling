@@ -15,18 +15,14 @@ def download_folder(repo_url, folder_path, output_dir="data"):
     )
 
     try:
-        # Получаем список файлов в папке
         response = requests.get(api_url)
         response.raise_for_status()
         contents = response.json()
 
-        # Создаем папку для сохранения, если ее нет
         os.makedirs(output_dir, exist_ok=True)
 
-        # Обрабатываем каждый элемент в папке
         for item in contents:
             if item["type"] == "file":
-                # Скачиваем файл
                 file_url = item["download_url"]
                 file_path = os.path.join(output_dir, item["name"])
 
@@ -37,7 +33,6 @@ def download_folder(repo_url, folder_path, output_dir="data"):
                     f.write(file_response.content)
 
             elif item["type"] == "dir":
-                # Рекурсивно обрабатываем подпапку
                 new_folder_path = os.path.join(folder_path, item["name"])
                 new_output_dir = os.path.join(output_dir, item["name"])
                 download_folder(repo_url, new_folder_path, new_output_dir)

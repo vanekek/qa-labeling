@@ -1,9 +1,11 @@
 from pathlib import Path
 
+import hydra
 import numpy as np
 import onnxruntime as ort
 import pytorch_lightning as pl
 import torch
+from omegaconf import DictConfig
 from transformers import BertTokenizer
 
 from qa_labeling.pl_modules.model import QALabler
@@ -30,8 +32,9 @@ class InferenceModel(pl.LightningModule):
         return preds
 
 
-def main():
-    model = InferenceModel(Path("./models/epoch=02-val_loss=0.4259-v2.ckpt"))
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
+def main(config: DictConfig):
+    model = InferenceModel(Path(config["inference"]["onnx_path"]))
     model.eval()
 
     device = torch.device("cpu")

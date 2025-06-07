@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import hydra
+import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
 from omegaconf import DictConfig
@@ -19,7 +20,9 @@ def main(config: DictConfig):
 
     preds = trainer.predict(model, datamodule=dm)
 
-    df = pd.DataFrame(preds, columns=["target_{i}" for i in range(len(TARGETS))])
+    df = pd.DataFrame(
+        np.array(preds), columns=[f"target_{i}" for i in range(len(TARGETS))]
+    )
 
     df.to_csv(Path(config["inference"]["save_path"]), index=False)
 
