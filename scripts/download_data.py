@@ -1,49 +1,59 @@
 import os
-from pathlib import Path
 
 import requests
 
 
-def download_from_github(repo_url, file_names, dest_folder="data"):
+def download_folder(repo_url, folder_path, output_dir="data"):
     """
     Загружаем файлы из GitHub репозитория
-
-    :param repo_url: URL репозитория (например 'https://github.com/username/reponame')
-    :param file_names: список имен файлов для загрузки
-    :param dest_folder: локальная папка для сохранения
     """
 
-    Path(dest_folder).mkdir(parents=True, exist_ok=True)
+    api_url = (
+        repo_url.replace("https://github.com", "https://api.github.com/repos")
+        + "/contents/"
+        + folder_path
+    )
 
-    if "github.com" in repo_url:
-        raw_base = (
-            repo_url.replace("github.com", "raw.githubusercontent.com") + "/main/"
-        )
-    else:
-        raw_base = repo_url + "/"
+    try:
+        # Получаем список файлов в папке
+        response = requests.get(api_url)
+        response.raise_for_status()
+        contents = response.json()
 
-    for file_name in file_names:
-        file_url = raw_base + file_name
-        file_path = os.path.join(dest_folder, file_name)
+        # Создаем папку для сохранения, если ее нет
+        os.makedirs(output_dir, exist_ok=True)
 
-        try:
-            response = requests.get(file_url)
-            response.raise_for_status()
+        # Обрабатываем каждый элемент в папке
+        for item in contents:
+            if item["type"] == "file":
+                # Скачиваем файл
+                file_url = item["download_url"]
+                file_path = os.path.join(output_dir, item["name"])
 
-            with open(file_path, "wb") as f:
-                f.write(response.content)
+                file_response = requests.get(file_url)
+                file_response.raise_for_status()
 
-            print(f"✓ Файл {file_name} успешно загружен в {dest_folder}/")
-        except requests.exceptions.RequestException as e:
-            print(f"✕ Ошибка при загрузке {file_name}: {e}")
+                with open(file_path, "wb") as f:
+                    f.write(file_response.content)
+
+            elif item["type"] == "dir":
+                # Рекурсивно обрабатываем подпапку
+                new_folder_path = os.path.join(folder_path, item["name"])
+                new_output_dir = os.path.join(output_dir, item["name"])
+                download_folder(repo_url, new_folder_path, new_output_dir)
+
+        print(f"\nВсе файлы успешно скачаны в папку: {os.path.abspath(output_dir)}")
+
+    except Exception as e:
+        print(f"Произошла ошибка: {e}")
 
 
 def main():
     repo_url = "https://github.com/vanekek/q-a-labeling-data"
-    files_to_download = ["train.csv", "val.csv", "test.csv"]
-    destination_folder = "data_raw"
+    files_to_download = "dvcstore"
+    destination_folder = "tmp/dvcstore/"
 
-    download_from_github(repo_url, files_to_download, destination_folder)
+    download_folder(repo_url, files_to_download, destination_folder)
 
 
 if __name__ == "__main__":

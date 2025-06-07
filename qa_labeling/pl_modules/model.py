@@ -13,7 +13,7 @@ class QALabler(pl.LightningModule):
 
     def __init__(self, model, lr, loss_weights, freeze):
         super().__init__()
-        self.save_hyperparameters(ignore=["model"])
+        self.save_hyperparameters()
         self.model = model
         self.lr = lr
         self.loss_weights = loss_weights
@@ -65,23 +65,12 @@ class QALabler(pl.LightningModule):
         original = labels.squeeze().numpy()
         preds = torch.sigmoid(torch.tensor(logits.squeeze())).numpy()
 
-        print(original.shape)
-        print(preds.shape)
-
         rho_val = np.mean(
             [
                 np.nan_to_num(spearmanr(original[:, i], preds[:, i]).statistic)
                 for i in range(preds.shape[1])
             ]
         )
-
-        # For nice image visualization with wandb! :)
-        # sample_imgs = data[:6]
-        # grid = torchvision.utils.make_grid(sample_imgs)
-
-        # self.logger.experiment.log(
-        #     {"example_images": [wandb.Image(grid, caption="Example Images")]}
-        # )
 
         self.log("val_loss", val_loss, prog_bar=True, on_epoch=True)
         self.log("val_rho", rho_val, prog_bar=True, on_epoch=True)
@@ -91,7 +80,7 @@ class QALabler(pl.LightningModule):
         pass
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Any:
-        input_ids, input_masks, input_segments, labels, _ = batch
+        input_ids, input_masks, input_segments, _ = batch
 
         logits = self(
             input_ids=input_ids,
@@ -99,17 +88,10 @@ class QALabler(pl.LightningModule):
             token_type_ids=input_segments,
         )
 
-        valid_preds = logits.squeeze().numpy()
-        original = labels.squeeze().numpy()
-        preds = torch.sigmoid(torch.tensor(valid_preds)).numpy()
+        preds_numpy = logits.squeeze().numpy()
+        preds = torch.sigmoid(torch.tensor(preds_numpy)).numpy()
 
-        rho_val = np.mean(
-            [
-                spearmanr(original[:, i], preds[:, i]).correlation
-                for i in range(preds.shape[1])
-            ]
-        )
-        return rho_val
+        return preds
 
     def configure_optimizers(self) -> Any:
         no_decay = ["bias", "LayerNorm.bias", "LayerNorm.weight"]

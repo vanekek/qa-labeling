@@ -173,9 +173,13 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-data_raw
 models
 mlruns
 outputs
-!data_raw/*.dvc
+data_raw/train.csv
+data_raw/val.csv
+data_raw/test.csv
+preds
+lightning_logs
 tmp
+qa_model.onnx

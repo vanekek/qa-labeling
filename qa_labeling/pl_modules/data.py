@@ -1,10 +1,10 @@
-from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
 import torch
+from dvc.api import DVCFileSystem
 from transformers import BertTokenizer
 
 from qa_labeling.utils import TARGETS, compute_input_arays, compute_output_arrays
@@ -48,12 +48,23 @@ class MyDataModule(pl.LightningDataModule):
         # поменять на пути
 
     def setup(self, stage: Optional[str] = None):
-        current_file = Path(__file__).resolve()
-        data_dir = current_file.parent.parent.parent / "data_raw"
+        # Old setupping
+        # current_file = Path(__file__).resolve()
+        # data_dir = current_file.parent.parent.parent / "data_raw"
 
-        train = pd.read_csv(data_dir / "train.csv")
-        val = pd.read_csv(data_dir / "val.csv")
-        test = pd.read_csv(data_dir / "test.csv")
+        # train = pd.read_csv(data_dir / "train.csv")
+        # val = pd.read_csv(data_dir / "val.csv")
+        # test = pd.read_csv(data_dir / "test.csv")
+        fs = DVCFileSystem()
+        with fs.open("/data_raw/train.csv") as f:
+            train = pd.read_csv(f)
+
+        with fs.open("/data_raw/val.csv") as f:
+            val = pd.read_csv(f)
+
+        with fs.open("/data_raw/test.csv") as f:
+            test = pd.read_csv(f)
+
         input_categories = list(train.columns[[1, 2, 5]])
 
         inputs_train = compute_input_arays(

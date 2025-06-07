@@ -182,3 +182,18 @@ def compute_input_arays(
 
 def compute_output_arrays(df, columns):
     return np.asarray(df[columns])
+
+
+def compute_inpute_simple(text, tokenizer, max_sequence_length):
+    text_tokenized = tokenizer.tokenize(text)
+    input_ids = _get_ids(text_tokenized, tokenizer, max_sequence_length)
+    input_masks = _get_masks(text_tokenized, max_sequence_length)
+    input_segments = _get_segments(text_tokenized, max_sequence_length)
+
+    return (
+        torch.from_numpy(np.asarray(input_ids, dtype=np.int32)).long().unsqueeze(0),
+        torch.from_numpy(np.asarray(input_masks, dtype=np.int32)).long().unsqueeze(0),
+        torch.from_numpy(np.asarray(input_segments, dtype=np.int32))
+        .long()
+        .unsqueeze(0),
+    )
